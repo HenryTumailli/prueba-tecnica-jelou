@@ -1,0 +1,76 @@
+version: '3.8'
+
+services:
+  # Base de Datos MySQL
+  db:
+    image: mysql:8.0
+    container_name: b2b-db
+    environment:
+      MYSQL_ROOT_PASSWORD: root_password
+      MYSQL_DATABASE: b2b_orders
+    volumes:
+      - ./db:/docker-entrypoint-initdb.d # schema.sql y seed.sql
+    ports:
+      - "3306:3306"
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # Customers API
+  customers-api:
+    build: ./customers-api
+    container_name: customers-api
+    ports:
+      - "3001:3001"
+    environment:
+      DB_HOST: db
+      DB_USER: root
+      DB_PASSWORD: root_password
+      DB_NAME: b2b_orders
+      PORT: 3001
+      JWT_SECRET: secret_key
+    depends_on:
+      db:
+        condition: service_healthy
+
+  # Orders API
+  orders-api:
+    build: ./orders-api
+    container_name: orders-api
+    ports:
+      - "3002:3002"
+    environment:
+      DB_HOST: db
+      DB_USER: root
+      DB_PASSWORD: root_password
+      DB_NAME: b2b_orders
+      PORT: 3002
+      JWT_SECRET: secret_key
+      CUSTOMERS_API_BASE: http://customers-api:3001
+    depends_on:
+      db:
+        condition: service_healthy
+      customers-api:
+        condition: service_started
+
+  # Lambda Orquestador (usando Serverless offline)
+  lambda-orchestrator:
+    build: ./lambda-orchestrator
+    container_name: lambda-orchestrator
+    ports:
+      - "3003:3003"
+    environment:
+      NODE_ENV: development
+      CUSTOMERS_API_BASE: http://customers-api:3001
+      ORDERS_API_BASE: http://orders-api:3002
+      PORT: 3003
+    depends_on:
+      - customers-api
+      - orders-api
+    command: ["npm", "run", "dev"] # para serverless-offline
+
+networks:
+  default:
+    name: b2b_network

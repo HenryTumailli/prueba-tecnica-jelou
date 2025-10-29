@@ -1,0 +1,163 @@
+openapi: 3.0.0
+info:
+  title: Customers API
+  description: API para la gestión de clientes en el sistema de pedidos B2B. Permite crear, leer, actualizar y eliminar clientes.
+  version: 1.0.0
+
+servers:
+  - url: http://localhost:3001
+    description: Servidor de desarrollo local
+
+paths:
+  /customers:
+    post:
+      summary: Crear un nuevo cliente
+      description: Registra un nuevo cliente en la base de datos. El email debe ser único.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  example: "ACME Corporation"
+                email:
+                  type: string
+                  format: email
+                  example: "ops@acme.com"
+                phone:
+                  type: string
+                  example: "555-1234"
+              required:
+                - name
+                - email
+      responses:
+        '201':
+          description: Cliente creado exitosamente.
+        '400':
+          description: Datos de entrada inválidos (falta nombre o email).
+        '409':
+          description: El email ya existe.
+
+    get:
+      summary: Buscar y listar clientes
+      description: Obtiene una lista paginada de clientes, con opción de búsqueda por nombre o email.
+      parameters:
+        - in: query
+          name: search
+          schema:
+            type: string
+          description: Término de búsqueda para filtrar por nombre o email.
+        - in: query
+          name: cursor
+          schema:
+            type: integer
+          description: ID del último cliente visto para obtener la página siguiente.
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            default: 10
+          description: Número máximo de clientes a devolver.
+      responses:
+        '200':
+          description: Lista de clientes obtenida con éxito.
+        '500':
+          description: Error del servidor.
+
+  /customers/{id}:
+    get:
+      summary: Obtener detalle de un cliente
+      description: Devuelve la información detallada de un cliente específico por su ID
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+          description: ID numérico del cliente a obtener.
+      responses:
+        '200':
+          description: Detalle del cliente.
+        '404':
+          description: Cliente no encontrado.
+
+    put:
+      summary: Actualizar un cliente
+      description: Actualiza uno o más campos de un cliente existente.
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+          description: ID numérico del cliente a actualizar.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                email:
+                  type: string
+                  format: email
+                phone:
+                  type: string
+      responses:
+        '200':
+          description: Cliente actualizado correctamente.
+        '404':
+          description: Cliente no encontrado.
+        '409':
+          description: El email ya existe.
+
+    delete:
+      summary: Eliminar un cliente
+      description: Realiza un borrado lógico (soft-delete) de un cliente.
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+          description: ID numérico del cliente a eliminar.
+      responses:
+        '204':
+          description: Cliente eliminado correctamente (sin contenido).
+        '404':
+          description: Cliente no encontrado.
+
+  /internal/customers/{id}:
+    get:
+      summary: Obtener detalle de cliente (Servicio Interno)
+      description: Endpoint interno para que otros servicios validen la existencia de un cliente.Requiere un token de autenticación.
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+          description: ID del cliente a validar.
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Cliente encontrado.
+        '401':
+          description: Falta el token de autorización.
+        '403':
+          description: Token de autorización inválido.
+        '404':
+          description: Cliente no encontrado.
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: "SERVICE_TOKEN"
+      description: "Token para comunicación entre servicios."
