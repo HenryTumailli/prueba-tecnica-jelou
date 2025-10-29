@@ -1,6 +1,7 @@
 const express = require('express');
 const config = require('./config');
 const productRoutes = require('./routes/products.routes');
+const orderRoutes = require('./routes/orders.routes');
 
 const app = express();
 
@@ -16,6 +17,7 @@ app.get('/health', (req, res) => {
 });
 
 // ... (middlewares)
-app.use(productRoutes); // <-- Usa las rutas de productos
+app.use(productRoutes);
+app.use(orderRoutes);
 
 module.exports = app;
