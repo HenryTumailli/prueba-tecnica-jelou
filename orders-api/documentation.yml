@@ -1,0 +1,241 @@
+openapi: 3.0.0
+info:
+  title: API de Órdenes
+  description: API para la gestión de productos y órdenes en el sistema B2B.
+  version: 1.0.0
+
+servers:
+  - url: http://localhost:3002
+    description: Servidor de desarrollo local
+
+paths:
+  /products:
+    post:
+      summary: Crear un nuevo producto
+      description: Añade un nuevo producto al catálogo.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                sku:
+                  type: string
+                  example: "PROD-005"
+                name:
+                  type: string
+                  example: "Rifle de Plasma"
+                price_cents:
+                  type: integer
+                  example: 350000
+                stock:
+                  type: integer
+                  example: 50
+              required:
+                - sku
+                - name
+                - price_cents
+                - stock
+      responses:
+        '201':
+          description: Producto creado exitosamente.
+        '409':
+          description: Ya existe un producto con ese SKU.
+
+    get:
+      summary: Listar y buscar productos
+      parameters:
+        - in: query
+          name: search
+          schema:
+            type: string
+          description: Término de búsqueda para el nombre del producto.
+        - in: query
+          name: cursor
+          schema:
+            type: integer
+          description: ID del último producto visto para la paginación.
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            default: 10
+          description: Número máximo de productos a devolver.
+      responses:
+        '200':
+          description: Una lista de productos.
+
+  /products/{id}:
+    get:
+      summary: Obtener detalle del producto
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Detalles del producto.
+        '404':
+          description: Producto no encontrado.
+
+    patch:
+      summary: Actualizar precio o stock del producto
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                price_cents:
+                  type: integer
+                stock:
+                  type: integer
+      responses:
+        '200':
+          description: Producto actualizado exitosamente.
+        '404':
+          description: Producto no encontrado.
+
+  /orders:
+    post:
+      summary: Crear una nueva orden
+      description: Crea una orden en estado 'CREATED', valida el cliente, verifica el stock y descuenta el stock dentro de una transacción.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateOrderRequest'
+      responses:
+        '201':
+          description: Orden creada exitosamente.
+        '400':
+          description: Datos de entrada inválidos (ej. stock insuficiente).
+        '404':
+          description: Cliente o producto no encontrado.
+
+    get:
+      summary: Listar y buscar órdenes
+      parameters:
+        - in: query
+          name: status
+          schema:
+            type: string
+            enum: [CREATED, CONFIRMED, CANCELED]
+        - in: query
+          name: from
+          schema:
+            type: string
+            format: date
+        - in: query
+          name: to
+          schema:
+            type: string
+            format: date
+        - in: query
+          name: cursor
+          schema:
+            type: integer
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            default: 10
+      responses:
+        '200':
+          description: Una lista de órdenes.
+
+  /orders/{id}:
+    get:
+      summary: Obtener detalle de la orden con sus ítems
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Detalles de la orden incluyendo sus ítems.
+        '404':
+          description: Orden no encontrada.
+
+  /orders/{id}/confirm:
+    post:
+      summary: Confirmar una orden de forma idempotente
+      description: Cambia el estado de una orden a 'CONFIRMED'. Reintentos con la misma clave devolverán el mismo resultado sin reprocesar.
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+        - in: header  # <-- Se añade el header aquí, dentro de 'parameters'
+          name: X-Idempotency-Key
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Orden confirmada exitosamente.
+        '400':
+          description: La orden no está en un estado que permita su confirmación.
+
+  /orders/{id}/cancel:
+    post:
+      summary: Cancelar una orden
+      description: Cancela una orden. Si está en 'CREATED', restaura el stock. Si está en 'CONFIRMED', solo puede ser cancelada dentro de 10 minutos.
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+        - in: header  # <-- Se añade el header aquí, dentro de 'parameters'
+          name: X-Idempotency-Key
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Orden cancelada exitosamente.
+        '400':
+          description: Las reglas de cancelación no se cumplieron.
+
+components:
+  schemas:
+    OrderItem:
+      type: object
+      properties:
+        product_id:
+          type: integer
+          example: 1
+        qty:
+          type: integer
+          example: 2
+      required:
+        - product_id
+        - qty
+
+    CreateOrderRequest:
+      type: object
+      properties:
+        customer_id:
+          type: integer
+          example: 1
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/OrderItem'
+      required:
+        - customer_id
+        - items
