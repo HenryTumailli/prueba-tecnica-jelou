@@ -1,45 +1,98 @@
-Configuración Local
+<h1 align="center">🚀 Sistema B2B Orders Orchestrator</h1>
 
-Prerrequisitos
+<div align="center">
+  <img src="https://img.shields.io/badge/Node.js-v22-green?logo=node.js" />
+  <img src="https://img.shields.io/badge/Express.js-blue?logo=express" />
+  <img src="https://img.shields.io/badge/MySQL-8.0-orange?logo=mysql" />
+  <img src="https://img.shields.io/badge/Docker-Compose-blue?logo=docker" />
+  <img src="https://img.shields.io/badge/Serverless-AWS_Lambda-yellow?logo=aws-lambda" />
+</div>
 
-Node.js (v22)
-Docker y Docker Compose
-AWS CLI (opcional, para despliegue)
-ngrok (opcional, para despliegue)
+<p align="center">
+  <b>Sistema de gestión de clientes y pedidos B2B</b><br>
+  Incluye dos APIs (Customers & Orders) y un Lambda Orquestador que automatiza la creación y confirmación de pedidos.
+</p>
 
-Pasos de Instalación
+---
 
-Configuración varibles de entorno
+## 🧩 Configuración Local
 
-Configura las variables de entorno: En cada una de las carpetas de servicio (/customers-api, /orders-api, /lambda-orchestrator), encontrarás un archivo .env.example. Crea una copia de cada uno y renómbrala a .env. Los valores por defecto están configurados para el entorno local.
+### 📋 Prerrequisitos
+- Node.js (v22)  
+- Docker y Docker Compose  
+- AWS CLI (opcional, para despliegue)  
+- ngrok (opcional, para despliegue)  
 
-NOTA: Para lambda-orchestrator existen dos configuraciones especificadas en .env.example. Una para levantarlo localmente y otra para docker.
+### 🧾 Pasos de Instalación
 
-Ejecucción
+#### Configuración variables de entorno
+Configura las variables de entorno: En cada una de las carpetas de servicio (/customers-api, /orders-api, /lambda-orchestrator), encontrarás un archivo `.env.example`.  
+Crea una copia de cada uno y renómbrala a `.env`. Los valores por defecto están configurados para el entorno local.
 
-Desde la raíz del proyecto, ejecuta el siguiente comando.
+> NOTA: Para lambda-orchestrador existen dos configuraciones especificadas en `.env.example`.  
+> Una para levantarlo localmente y otra para Docker.
 
+### Ejecución
+
+En caso de querer ejecutar Lambda Orquestador <b>localmente</b> en el archivo <code>/lambda-orchestrator/.env</code> utilizar:
+
+```bash
+CUSTOMERS_API_BASE=http://localhost:3001
+ORDERS_API_BASE=http://localhost:3002
+SERVICE_TOKEN=SERVICE_TOKEN
+```
+
+Ubicarse en <code>/lambda-orchestrator/</code> y ejecutar: 
+
+```bash
+npm run dev
+```
+En caso de querer ejecutar Lambda Orquestador con <b>docker</b> en el archivo <code>/lambda-orchestrator/.env</code> utilizar:
+
+```bash
+CUSTOMERS_API_BASE: http://customers-api:3001
+ORDERS_API_BASE: http://orders-api:3002
+SERVICE_TOKEN: SERVICE_TOKEN
+```
+
+Desde la raíz del proyecto, ejecuta el siguiente comando:
+
+```bash
 docker-compose up --build -d
+```
 
-Esto construirá las imágenes y levantará los contenedores en segundo plano.
+<h2 align="center">✅ Verificación y Pruebas</h2>
 
+<p align="center">
 Puedes verificar que todo esté funcionando accediendo a las siguientes URLs:
+</p>
 
-Customers API: http://localhost:3001/health
+<table align="center">
+  <tr>
+    <td><b>Customers API</b></td>
+    <td><a href="http://localhost:3001/health">http://localhost:3001/health</a></td>
+  </tr>
+  <tr>
+    <td><b>Orders API</b></td>
+    <td><a href="http://localhost:3002/health">http://localhost:3002/health</a></td>
+  </tr>
+  <tr>
+    <td><b>Lambda Orquestador</b></td>
+    <td><a href="http://localhost:3003">http://localhost:3003</a></td>
+  </tr>
+</table>
 
-Orders API: http://localhost:3002/health
+---
 
-El orquestador estará escuchando en http://localhost:3003.
+<h3>🧪 Cómo Probar el Sistema</h3>
 
+<p>Para probar el flujo completo, se debe enviar una petición POST al Lambda Orquestador.</p>
 
-Cómo Probar el Sistema
-Para probar el flujo completo, se debe enviar una petición POST al Lambda Orquestador.
+<b>Endpoint de Prueba: </b>POST <a href="http://localhost:3003">http://localhost:3003/orchestrator/create-and-confirm-order</a>
 
-Endpoint de Prueba
-POST http://localhost:3003/orchestrator/create-and-confirm-order
+<b>Ejemplo con cURL:</b>
 
-Ejemplo con cURL
-
+```bash
 curl -X POST http://localhost:3003/orchestrator/create-and-confirm-order \
 -H "Content-Type: application/json" \
 -d '{
@@ -49,12 +102,11 @@ curl -X POST http://localhost:3003/orchestrator/create-and-confirm-order \
   ],
   "idempotency_key": "una-clave-unica-por-peticion"
 }'
+```
 
 Respuesta Esperada (201 Created)
 Si la operación es exitosa, recibirá un JSON consolidado con los datos del cliente y la orden ya confirmada.
-
-JSON
-
+```bash
 {
     "success": true,
     "data": {
@@ -79,24 +131,7 @@ JSON
         }
     }
 }
+```
+<h3>☁️ Despliegue en AWS</h3> 
+<ol> <li><b>Configura tus credenciales de AWS:</b> Asegúrate de tener el AWS CLI configurado con tus credenciales. <pre><code>aws configure</code></pre> </li> <li><b>Expón tus APIs locales con ngrok:</b> El Lambda en la nube necesita una URL pública para comunicarse con tus APIs locales. Usa ngrok para crear túneles.</li> <li><b>Copia las URLs públicas</b> que ngrok te proporcione (https://....ngrok-free.app).</li> <li><b>Actualiza el archivo <code>serverless.yml</code>:</b> En <code>/lambda-orchestrator/serverless.yml</code>, actualiza las variables de entorno <code>CUSTOMERS_API_BASE</code> y <code>ORDERS_API_BASE</code> con las URLs de ngrok.</li> <li><b>Despliega el Lambda:</b> Desde la carpeta <code>/lambda-orchestrator</code>, ejecuta: <pre><code>npm run deploy</code></pre> </li> </ol> <p>Al finalizar, la terminal te proporcionará la URL pública de tu Lambda en AWS. Ya puedes usar esa URL en Postman para probar el sistema en un entorno real.</p>
 
-Despliegue en AWS
-Para desplegar el Lambda Orquestador en AWS, sigue estos pasos.
-
-Configura tus credenciales de AWS: Asegúrate de tener el AWS CLI configurado con tus credenciales.
-
-Comando: aws configure
-
-Expón tus APIs locales con ngrok: El Lambda en la nube necesita una URL pública para comunicarse con tus APIs locales. Usa ngrok para crear túneles.
-
-En una terminal, inicia los túneles para ambas APIs usando el archivo de configuración:
-
-Copia las URLs públicas (https://....ngrok-free.app) que ngrok te proporcione.
-
-Actualiza el archivo serverless.yml: En /lambda-orchestrator/serverless.yml, actualiza las variables de entorno CUSTOMERS_API_BASE y ORDERS_API_BASE con las URLs de ngrok.
-
-Despliega el Lambda: Desde la carpeta /lambda-orchestrator, ejecuta el script de despliegue.
-
-npm run deploy
-
-Al finalizar, la terminal te proporcionará la URL pública de tu Lambda en AWS. Ya puedes usar esa URL en Postman para probar el sistema en un entorno real.
