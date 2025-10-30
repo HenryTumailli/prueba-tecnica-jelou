@@ -15,26 +15,24 @@
 
 ---
 
-## 🧩 Configuración Local
-
-### 📋 Prerrequisitos
+## 📋 Prerrequisitos
 - Node.js (v22)  
 - Docker y Docker Compose  
 - AWS CLI (opcional, para despliegue)  
 - ngrok (opcional, para despliegue)  
 
-### 🧾 Pasos de Instalación
+## 🧾 Pasos de Instalación
 
-#### Configuración variables de entorno
+### Configuración variables de entorno
 Configura las variables de entorno: En cada una de las carpetas de servicio (/customers-api, /orders-api, /lambda-orchestrator), encontrarás un archivo `.env.example`.  
 Crea una copia de cada uno y renómbrala a `.env`. Los valores por defecto están configurados para el entorno local.
 
 > NOTA: Para lambda-orchestrador existen dos configuraciones especificadas en `.env.example`.  
 > Una para levantarlo localmente y otra para Docker.
 
-### Ejecución
+## Ejecución
 
-#### Local
+### Local
 En cada una de las carpetas de servicio <code>/customers-api, /orders-api, /lambda-orchestrator</code> ejecutar:
 ```bash
 npm install
@@ -51,7 +49,7 @@ En cada una de las carpetas de servicio <code>/customers-api, /orders-api, /lamb
 npm run dev
 ```
 
-#### Docker
+### Docker
 
 En caso de querer ejecutar Lambda Orquestador con <b>docker</b> en el archivo <code>/lambda-orchestrator/.env</code> utilizar:
 
