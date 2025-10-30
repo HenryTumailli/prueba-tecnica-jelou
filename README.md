@@ -64,6 +64,7 @@ Desde la raíz del proyecto, ejecuta el siguiente comando:
 ```bash
 docker-compose up --build -d
 ```
+Esto levantará Customers API, Orders API, Lambda Orquestador y creará la base de datos y la llenará con datos iniciales.
 
 
 <h2 align="center">✅ Verificación y Pruebas</h2>
