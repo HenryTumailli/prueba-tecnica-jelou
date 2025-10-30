@@ -1,0 +1,75 @@
+openapi: 3.0.0
+info:
+  title: API del Lambda Orquestador
+  description: Un orquestador que maneja la creación y confirmación de una orden B2B.
+  version: 1.0.0
+
+servers:
+  - url: http://localhost:3003
+    description: Endpoint local de serverless-offline
+
+paths:
+  /orchestrator/create-and-confirm-order:
+    post:
+      summary: Crear y confirmar una orden
+      description: Orquesta el proceso completo de la orden, desde la validación del cliente hasta la confirmación, en un único flujo.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                customer_id:
+                  type: integer
+                  example: 1
+                items:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      product_id:
+                        type: integer
+                        example: 2
+                      qty:
+                        type: integer
+                        example: 3
+                idempotency_key:
+                  type: string
+                  example: "abc-123"
+                correlation_id:
+                  type: string
+                  example: "req-789"
+              required:
+                - customer_id
+                - items
+                - idempotency_key
+      responses:
+        '201':
+          description: Orden creada y confirmada exitosamente. Devuelve un objeto JSON consolidado.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  correlationId:
+                    type: string
+                    example: "req-789"
+                  data:
+                    type: object
+                    properties:
+                      customer:
+                        type: object
+                        # Aquí se definen las propiedades del cliente
+                      order:
+                        type: object
+                        # Aquí se definen las propiedades de la orden
+        '400':
+          description: Petición incorrecta (ej. faltan parámetros, stock inválido).
+        '404':
+          description: Cliente o producto no encontrado.
+        '500':
+          description: Error interno del servidor durante la orquestación.

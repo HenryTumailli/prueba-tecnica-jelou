@@ -14,7 +14,7 @@ router.delete('/customers/:id', customerController.deleteCustomer);
 router.get(
   '/internal/customers/:id',
   authMiddleware.verifyServiceToken,
-  customerController.getCustomerById // Reutiliza el mismo controlador
+  customerController.getCustomerById
 );
 
 module.exports = router;

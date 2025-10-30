@@ -3,10 +3,6 @@ service: lambda-orchestrator
 provider:
   name: aws
   runtime: nodejs22.x
-  environment:
-    CUSTOMERS_API_BASE: http://customers-api:3001
-    ORDERS_API_BASE: http://orders-api:3002
-    SERVICE_TOKEN: SERVICE_TOKEN
 
 functions:
   createAndConfirmOrder:

@@ -2,7 +2,7 @@ Configuración Local
 
 Prerrequisitos
 
-Node.js (v20 o superior)
+Node.js (v22)
 Docker y Docker Compose
 AWS CLI (opcional, para despliegue)
 ngrok (opcional, para despliegue)
@@ -13,12 +13,17 @@ Configuración varibles de entorno
 
 Configura las variables de entorno: En cada una de las carpetas de servicio (/customers-api, /orders-api, /lambda-orchestrator), encontrarás un archivo .env.example. Crea una copia de cada uno y renómbrala a .env. Los valores por defecto están configurados para el entorno local.
 
+NOTA: Para lambda-orchestrator existen dos configuraciones especificadas en .env.example. Una para levantarlo localmente y otra para docker.
+
 Ejecucción
-Desde la raíz del proyecto, ejecuta el siguiente comando. Esto construirá las imágenes y levantará los contenedores en segundo plano.
+
+Desde la raíz del proyecto, ejecuta el siguiente comando.
 
 docker-compose up --build -d
 
-Puedes verificar que todo esté funcionando accediendo a las siguientes URLs de salud:
+Esto construirá las imágenes y levantará los contenedores en segundo plano.
+
+Puedes verificar que todo esté funcionando accediendo a las siguientes URLs:
 
 Customers API: http://localhost:3001/health
 
@@ -26,8 +31,9 @@ Orders API: http://localhost:3002/health
 
 El orquestador estará escuchando en http://localhost:3003.
 
-🧪 Cómo Probar el Sistema
-Para probar el flujo completo, debes enviar una petición POST al Lambda Orquestador.
+
+Cómo Probar el Sistema
+Para probar el flujo completo, se debe enviar una petición POST al Lambda Orquestador.
 
 Endpoint de Prueba
 POST http://localhost:3003/orchestrator/create-and-confirm-order
@@ -45,7 +51,7 @@ curl -X POST http://localhost:3003/orchestrator/create-and-confirm-order \
 }'
 
 Respuesta Esperada (201 Created)
-Si la operación es exitosa, recibirás un JSON consolidado con los datos del cliente y la orden ya confirmada.
+Si la operación es exitosa, recibirá un JSON consolidado con los datos del cliente y la orden ya confirmada.
 
 JSON
 

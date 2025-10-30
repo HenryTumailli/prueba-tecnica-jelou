@@ -12,7 +12,6 @@ const pool = mysql.createPool({
   queueLimit: 0
 });
 
-// Mensaje para confirmar la conexión exitosa
 pool.getConnection()
   .then(connection => {
     console.log('Customers API connected to MySQL database!');

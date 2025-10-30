@@ -1,6 +1,5 @@
 const db = require('../db/mysql');
 
-// POST /products -> Crea un nuevo producto
 exports.createProduct = async (req, res) => {
   const { sku, name, price_cents, stock } = req.body;
   if (!sku || !name || price_cents === undefined || stock === undefined) {
@@ -21,7 +20,6 @@ exports.createProduct = async (req, res) => {
   }
 };
 
-// GET /products/:id -> Obtiene un producto por ID
 exports.getProductById = async (req, res) => {
   const { id } = req.params;
   try {
@@ -35,7 +33,6 @@ exports.getProductById = async (req, res) => {
   }
 };
 
-// PATCH /products/:id -> Actualiza precio o stock
 exports.updateProduct = async (req, res) => {
   const { id } = req.params;
   const { price_cents, stock } = req.body;
@@ -66,6 +63,48 @@ exports.updateProduct = async (req, res) => {
     }
     res.status(200).json({ message: 'Product updated successfully' });
   } catch (error) {
+    res.status(500).json({ error: 'Database error' });
+  }
+};
+
+exports.getProducts = async (req, res) => {
+  // Extraer parámetros de la query con valores por defecto
+  const { search, cursor, limit = 10 } = req.query;
+
+  try {
+    let query = 'SELECT id, sku, name, price_cents, stock FROM products WHERE deleted_at IS NULL';
+    const params = [];
+
+    // Añadir filtro de búsqueda si existe
+    if (search) {
+      query += ' AND name LIKE ?';
+      params.push(`%${search}%`);
+    }
+
+    // Añadir filtro de cursor para paginación
+    if (cursor) {
+      query += ' AND id > ?';
+      params.push(cursor);
+    }
+
+    query += ' ORDER BY id ASC LIMIT ?';
+    params.push(parseInt(limit, 10) + 1); // Pedimos uno más para saber si hay página siguiente
+
+    const [rows] = await db.query(query, params);
+
+    let nextCursor = null;
+    // Si obtenemos más resultados de los pedidos, hay una página siguiente
+    if (rows.length > limit) {
+      nextCursor = rows.pop().id; // El último elemento es el cursor de la siguiente página
+    }
+    
+    res.status(200).json({
+      data: rows,
+      next_cursor: nextCursor
+    });
+
+  } catch (error) {
+    console.error(error);
     res.status(500).json({ error: 'Database error' });
   }
 };

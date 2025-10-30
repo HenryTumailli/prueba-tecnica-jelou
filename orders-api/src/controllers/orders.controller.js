@@ -1,22 +1,20 @@
 const db = require('../db/mysql');
 const { validateCustomer } = require('../services/customer.service');
 
-// POST /orders -> Crea una nueva orden
 exports.createOrder = async (req, res) => {
   const { customer_id, items } = req.body;
 
-  // 1. Validación de entrada
+  // Verifica si se envio el customer_id y si existen items
   if (!customer_id || !items || !Array.isArray(items) || items.length === 0) {
     return res.status(400).json({ error: 'customer_id and a non-empty items array are required.' });
   }
 
-  // 2. Validar que el cliente exista
+  //Validar que el cliente exista
   const customer = await validateCustomer(customer_id);
   if (!customer) {
     return res.status(404).json({ error: `Customer with id ${customer_id} not found.` });
   }
 
-  // 3. Iniciar transacción en la base de datos
   const connection = await db.getConnection();
   try {
     await connection.beginTransaction();
@@ -24,7 +22,7 @@ exports.createOrder = async (req, res) => {
     let total_cents = 0;
     const orderItemsData = [];
 
-    // 4. Procesar cada item: verificar stock y calcular totales
+    //Procesar cada item: verificar stock y calcular totales
     for (const item of items) {
       // Bloquea la fila del producto para evitar race conditions
       const [products] = await connection.query(
@@ -50,14 +48,14 @@ exports.createOrder = async (req, res) => {
       });
     }
 
-    // 5. Crear la orden en la tabla `orders`
+    // Crear la orden en la tabla `orders`
     const [orderResult] = await connection.query(
       'INSERT INTO orders (customer_id, total_cents, status) VALUES (?, ?, ?)',
       [customer_id, total_cents, 'CREATED']
     );
     const orderId = orderResult.insertId;
 
-    // 6. Insertar los items y descontar el stock
+    // Insertar los items y descontar el stock
     for (const itemData of orderItemsData) {
       // Insertar item en `order_items`
       await connection.query(
@@ -71,7 +69,7 @@ exports.createOrder = async (req, res) => {
       );
     }
 
-    // 7. Si todo fue bien, confirmar la transacción
+    // Si todo fue bien, confirmar la transacción
     await connection.commit();
 
     res.status(201).json({
@@ -81,11 +79,11 @@ exports.createOrder = async (req, res) => {
     });
 
   } catch (error) {
-    // 8. Si algo falló, revertir todos los cambios
+    // Si algo falló, revertir todos los cambios
     await connection.rollback();
     res.status(400).json({ error: error.message });
   } finally {
-    // 9. Liberar la conexión a la base de datos
+    // Liberar la conexión a la base de datos
     connection.release();
   }
 };
@@ -111,7 +109,6 @@ exports.getOrderById = async (req, res) => {
   }
 };
 
-// POST /orders/:id/confirm -> Confirma una orden de forma idempotente
 exports.confirmOrder = async (req, res) => {
   const { id: orderId } = req.params;
   const idempotencyKey = req.headers['x-idempotency-key'];
@@ -124,7 +121,7 @@ exports.confirmOrder = async (req, res) => {
   try {
     await connection.beginTransaction();
 
-    // 1. Verificar si la clave de idempotencia ya fue procesada
+    // Verificar si la clave de idempotencia ya fue procesada
     const [existingKey] = await connection.query(
       'SELECT * FROM idempotency_keys WHERE key_value = ?',
       [idempotencyKey]
@@ -134,7 +131,7 @@ exports.confirmOrder = async (req, res) => {
       return res.status(existingKey[0].status_code).json(existingKey[0].response_body);
     }
 
-    // 2. Obtener la orden
+    // Obtener la orden
     const [orders] = await connection.query(
       'SELECT * FROM orders WHERE id = ? FOR UPDATE',
       [orderId]
@@ -149,7 +146,7 @@ exports.confirmOrder = async (req, res) => {
       throw new Error(`Order is already in ${order.status} state.`);
     }
 
-    // 3. Actualizar el estado de la orden
+    // Actualizar el estado de la orden
     await connection.query(
       "UPDATE orders SET status = 'CONFIRMED', confirmed_at = NOW() WHERE id = ?",
       [orderId]
@@ -158,7 +155,7 @@ exports.confirmOrder = async (req, res) => {
     const responseBody = { message: 'Order confirmed successfully', orderId, status: 'CONFIRMED' };
     const statusCode = 200;
 
-    // 4. Guardar la clave de idempotencia y la respuesta
+    // Guardar la clave de idempotencia y la respuesta
     await connection.query(
       'INSERT INTO idempotency_keys (key_value, target_type, target_id, status_code, response_body, expires_at) VALUES (?, ?, ?, ?, ?, ?)',
       [idempotencyKey, 'order_confirmation', orderId, statusCode, JSON.stringify(responseBody), new Date(Date.now() + 24 * 60 * 60 * 1000)] // Expira en 24h
@@ -175,7 +172,6 @@ exports.confirmOrder = async (req, res) => {
   }
 };
 
-// POST /orders/:id/cancel -> Cancela una orden
 exports.cancelOrder = async (req, res) => {
   const { id: orderId } = req.params;
   const connection = await db.getConnection();
@@ -203,7 +199,7 @@ exports.cancelOrder = async (req, res) => {
         // Solo se puede cancelar dentro de los 10 minutos de confirmada
         const confirmedAt = new Date(order.confirmed_at);
         const now = new Date();
-        if ((now - confirmedAt) > 10 * 60 * 1000) { // 10 minutos en ms
+        if ((now - confirmedAt) > 10 * 60 * 1000) { 
             throw new Error('Cannot cancel a confirmed order after 10 minutes.');
         }
     } else {
@@ -226,7 +222,6 @@ exports.cancelOrder = async (req, res) => {
   }
 };
 
-// GET /orders -> Búsqueda y listado de órdenes
 exports.getOrders = async (req, res) => {
   // Extraer parámetros de la query con valores por defecto
   const { status, from, to, cursor, limit = 10 } = req.query;

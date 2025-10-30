@@ -8,9 +8,9 @@ const app = express();
 app.set('port',config.app.port);
 
 // Middlewares
-app.use(express.json()); // Para parsear body JSON
+app.use(express.json());
 
-// Ruta de Health Check (requerida en la prueba )
+// Ruta de Health Check
 app.get('/health', (req, res) => {
   res.status(200).json({ status: 'ok' });
 });

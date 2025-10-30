@@ -1,6 +1,5 @@
 const db = require('../db/mysql');
 
-// POST /customers → Crea un nuevo cliente
 exports.createCustomer = async (req, res) => {
   const { name, email, phone } = req.body;
   if (!name || !email) {
@@ -22,10 +21,10 @@ exports.createCustomer = async (req, res) => {
   }
 };
 
-// GET /customers/:id → Obtiene un cliente por ID
 exports.getCustomerById = async (req, res) => {
   const { id } = req.params;
   try {
+    //Verificar si existe el usuario
     const [rows] = await db.query('SELECT * FROM customers WHERE id = ? AND deleted_at IS NULL', [id]);
     if (rows.length === 0) {
       return res.status(404).json({ error: 'Customer not found' });
@@ -36,7 +35,6 @@ exports.getCustomerById = async (req, res) => {
   }
 };
 
-// GET /customers → Búsqueda con paginación por cursor
 exports.getCustomers = async (req, res) => {
   // Extraer parámetros de la query con valores por defecto
   const { search, cursor, limit = 10 } = req.query;
@@ -45,13 +43,11 @@ exports.getCustomers = async (req, res) => {
     let query = 'SELECT id, name, email, phone FROM customers WHERE deleted_at IS NULL';
     const params = [];
 
-    // Añadir filtro de búsqueda si existe
     if (search) {
       query += ' AND (name LIKE ? OR email LIKE ?)';
       params.push(`%${search}%`, `%${search}%`);
     }
 
-    // Añadir filtro de cursor para paginación
     if (cursor) {
       query += ' AND id > ?';
       params.push(cursor);
@@ -132,7 +128,6 @@ exports.updateCustomer = async (req, res) => {
   }
 };
 
-// DELETE /customers/:id → Realiza un soft-delete
 exports.deleteCustomer = async (req, res) => {
   const { id } = req.params;
   try {
@@ -140,7 +135,7 @@ exports.deleteCustomer = async (req, res) => {
     if (result.affectedRows === 0) {
       return res.status(404).json({ error: 'Customer not found' });
     }
-    res.status(204).send(); // 204 No Content
+    res.status(204).send();
   } catch (error) {
     res.status(500).json({ error: 'Database error' });
   }

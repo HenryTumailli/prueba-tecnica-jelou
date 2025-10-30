@@ -30,7 +30,7 @@ services:
       DB_PASSWORD: root_password
       DB_NAME: b2b_orders
       PORT: 3001
-      JWT_SECRET: secret_key
+      SERVICE_TOKEN: SERVICE_TOKEN
     depends_on:
       db:
         condition: service_healthy
@@ -47,7 +47,7 @@ services:
       DB_PASSWORD: root_password
       DB_NAME: b2b_orders
       PORT: 3002
-      JWT_SECRET: secret_key
+      SERVICE_TOKEN: SERVICE_TOKEN
       CUSTOMERS_API_BASE: http://customers-api:3001
     depends_on:
       db:
@@ -66,11 +66,12 @@ services:
       NODE_ENV: development
       CUSTOMERS_API_BASE: http://customers-api:3001
       ORDERS_API_BASE: http://orders-api:3002
+      SERVICE_TOKEN: SERVICE_TOKEN
       PORT: 3003
     depends_on:
       - customers-api
       - orders-api
-    command: ["npm", "run", "dev"] # para serverless-offline
+    command: ["npm", "run", "start"] # para serverless-offline
 
 networks:
   default:
