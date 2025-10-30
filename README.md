@@ -34,8 +34,8 @@ Crea una copia de cada uno y renómbrala a `.env`. Los valores por defecto está
 
 ### Ejecución
 
-En caso de querer ejecutar Lambda Orquestador <b>localmente</b> dirígete a <code>/lambda-orchestrator</code> y ejecuta:
-
+#### Local
+En cada una de las carpetas de servicio <code>/customers-api, /orders-api, /lambda-orchestrator</code> ejecutar:
 ```bash
 npm install
 ```
@@ -46,12 +46,12 @@ CUSTOMERS_API_BASE=http://localhost:3001
 ORDERS_API_BASE=http://localhost:3002
 SERVICE_TOKEN=SERVICE_TOKEN
 ```
-
-Dirígete a <code>/lambda-orchestrator/</code> y ejecutar: 
-
+En cada una de las carpetas de servicio <code>/customers-api, /orders-api, /lambda-orchestrator</code> ejecutar:
 ```bash
 npm run dev
 ```
+
+#### Docker
 
 En caso de querer ejecutar Lambda Orquestador con <b>docker</b> en el archivo <code>/lambda-orchestrator/.env</code> utilizar:
 
@@ -61,7 +61,7 @@ ORDERS_API_BASE: http://orders-api:3002
 SERVICE_TOKEN: SERVICE_TOKEN
 ```
 
-En ambos casos desde la raíz del proyecto, ejecuta el siguiente comando:
+Desde la raíz del proyecto, ejecuta el siguiente comando:
 
 ```bash
 docker-compose up --build -d
