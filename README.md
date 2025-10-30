@@ -91,6 +91,8 @@ Puedes verificar que todo esté funcionando accediendo a las siguientes URLs:
 
 <h3>🧪 Cómo Probar el Sistema</h3>
 
+En el directorio <code>/postman</code> se encuentra disponible un archivo collection para probar más a fondo cada uno de los endpoints.
+
 <p>Para probar el flujo completo, se debe enviar una petición POST al Lambda Orquestador.</p>
 
 <b>Endpoint de Prueba: </b>POST <a href="http://localhost:3003">http://localhost:3003/orchestrator/create-and-confirm-order</a>
